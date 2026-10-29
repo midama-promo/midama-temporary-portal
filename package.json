@@ -1,0 +1,14 @@
+{
+  "name": "midama-temporary-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Temporary client and admin portal for Mid-Ama Promo music distribution",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create midama-portal",
+    "db:migrate:local": "wrangler d1 migrations apply midama-portal --local",
+    "db:migrate:remote": "wrangler d1 migrations apply midama-portal --remote"
+  },
+  "devDependencies": { "wrangler": "^4.45.0" }
+}

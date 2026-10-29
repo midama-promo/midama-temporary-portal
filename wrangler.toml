@@ -1,0 +1,23 @@
+name = "midama-temporary-portal"
+main = "src/worker.js"
+compatibility_date = "2026-10-29"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "midama-portal"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "midama-portal-assets"
+
+[vars]
+APP_ORIGIN = "https://portal.midamapromo.co.za"
+ADMIN_EMAIL = "remoabetswemolefi@gmail.com"
+RESEND_FROM = "Mid-Ama Promo <portal@midamapromo.co.za>"
