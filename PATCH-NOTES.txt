@@ -1,0 +1,17 @@
+Mid-Ama Promo temporary portal — patch notes
+
+Based on the latest configured ZIP, this patch makes these fixes:
+1. The admin release DELETE endpoint now returns 403 without deleting the release.
+2. Release submissions validate all track audio references before inserting the release, preventing invalid track references from leaving a partial release record.
+3. The admin support-ticket endpoint now includes each ticket's message history, matching what the conversation UI expects.
+
+Configuration retained:
+- D1 database: midama-portal
+- D1 ID: 0c6ab22f-5a0c-45a5-9b0d-3ae461cd6642
+- R2 bucket: mid-ama-promo-files
+- Portal origin: https://portal.midamapromo.co.za
+
+Deployment notes:
+- Configure RESEND_API_KEY as a Worker secret; never put it in wrangler.toml or commit it to GitHub.
+- Confirm the Resend sender domain/address is verified.
+- This patch has passed Node.js syntax validation for src/worker.js. It has not been deployed or tested against the live Cloudflare account.

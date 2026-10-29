@@ -71,8 +71,12 @@ async function route(request, env) {
     const d = await body(request); if (!d.title?.trim() || !d.primary_artist?.trim()) return fail('Release title and primary artist are required.');
     const artworkKey = d.artwork_key || null;
     if (artworkKey && !artworkKey.startsWith(`${user.id}/artwork/`)) return fail('Invalid artwork upload reference.');
-    const id = uuid(); await env.DB.prepare('INSERT INTO releases(id,user_id,title,primary_artist,release_type,release_date,genre,explicit,notes,status,royalty_amount,artwork_key) VALUES(?,?,?,?,?,?,?,?,?,?,0,?)').bind(id,user.id,d.title.trim(),d.primary_artist.trim(),d.release_type || 'Single',d.release_date || null,d.genre || null,d.explicit ? 1 : 0,d.notes || '', 'Submitted',artworkKey).run();
-    for (const t of (Array.isArray(d.tracks) ? d.tracks : []).slice(0,50)) if (t.title?.trim()) { if (t.audio_key && !t.audio_key.startsWith(`${user.id}/audio/`)) return fail('Invalid audio upload reference.'); await env.DB.prepare('INSERT INTO tracks(id,release_id,title,artist_credits,audio_key) VALUES(?,?,?,?,?)').bind(uuid(),id,t.title.trim(),t.artist_credits || '',t.audio_key || null).run(); }
+    const tracks = (Array.isArray(d.tracks) ? d.tracks : []).slice(0, 50).filter(t => t && typeof t.title === 'string' && t.title.trim());
+    // Validate every uploaded-file reference before writing the release, so a bad track cannot leave a partial submission.
+    if (tracks.some(t => t.audio_key && (typeof t.audio_key !== 'string' || !t.audio_key.startsWith(`${user.id}/audio/`)))) return fail('Invalid audio upload reference.');
+    const id = uuid();
+    await env.DB.prepare('INSERT INTO releases(id,user_id,title,primary_artist,release_type,release_date,genre,explicit,notes,status,royalty_amount,artwork_key) VALUES(?,?,?,?,?,?,?,?,?,?,0,?)').bind(id,user.id,d.title.trim(),d.primary_artist.trim(),d.release_type || 'Single',d.release_date || null,d.genre || null,d.explicit ? 1 : 0,d.notes || '', 'Submitted',artworkKey).run();
+    for (const t of tracks) await env.DB.prepare('INSERT INTO tracks(id,release_id,title,artist_credits,audio_key) VALUES(?,?,?,?,?)').bind(uuid(),id,t.title.trim(),typeof t.artist_credits === 'string' ? t.artist_credits : '',t.audio_key || null).run();
     return json({ ok:true, id }, 201);
   }
   if (path.startsWith('/api/releases/') && method === 'PATCH') {
@@ -84,7 +88,8 @@ async function route(request, env) {
   }
   if (path.startsWith('/api/releases/') && method === 'DELETE') {
     if (!isAdmin(user)) return fail('Admin access required.',403);
-    const id = path.split('/')[3]; await env.DB.prepare('DELETE FROM releases WHERE id=?').bind(id).run(); return fail('Deletion is disabled in the temporary portal. Manage release records through status changes.',403);
+    // Intentionally do not delete anything in this temporary portal.
+    return fail('Deletion is disabled in the temporary portal. Manage release records through status changes.',403);
   }
   if (path === '/api/admin/clients' && method === 'GET') {
     if (!isAdmin(user)) return fail('Admin access required.',403);
@@ -96,7 +101,9 @@ async function route(request, env) {
   }
   if (path === '/api/admin/tickets' && method === 'GET') {
     if (!isAdmin(user)) return fail('Admin access required.',403);
-    const rows = await env.DB.prepare('SELECT t.*,u.email AS client_email FROM tickets t JOIN users u ON u.id=t.user_id ORDER BY t.updated_at DESC').all(); return json({ tickets: rows.results });
+    const rows = await env.DB.prepare('SELECT t.*,u.email AS client_email FROM tickets t JOIN users u ON u.id=t.user_id ORDER BY t.updated_at DESC').all();
+    for (const t of rows.results) t.messages = (await env.DB.prepare('SELECT m.*,u.email AS sender_email,u.role AS sender_role FROM ticket_messages m JOIN users u ON u.id=m.sender_id WHERE m.ticket_id=? ORDER BY m.created_at').bind(t.id).all()).results;
+    return json({ tickets: rows.results });
   }
   if (path === '/api/tickets' && method === 'GET') {
     const rows = await env.DB.prepare('SELECT * FROM tickets WHERE user_id=? ORDER BY updated_at DESC').bind(user.id).all();
