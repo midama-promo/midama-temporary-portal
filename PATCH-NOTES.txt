@@ -1,17 +1,36 @@
-Mid-Ama Promo temporary portal — patch notes
+Mid-Ama Promo temporary portal — Render upgrade patch notes
 
-Based on the latest configured ZIP, this patch makes these fixes:
-1. The admin release DELETE endpoint now returns 403 without deleting the release.
-2. Release submissions validate all track audio references before inserting the release, preventing invalid track references from leaving a partial release record.
-3. The admin support-ticket endpoint now includes each ticket's message history, matching what the conversation UI expects.
+Starting point
+- The uploaded project was a small Cloudflare Worker/static starter portal.
+- It did not contain the full release wizard, complete artist-library integration, or several requested workflows.
+- The original Worker source, wrangler.toml, and 0001_init.sql are retained.
 
-Configuration retained:
-- D1 database: midama-portal
-- D1 ID: 0c6ab22f-5a0c-45a5-9b0d-3ae461cd6642
-- R2 bucket: mid-ama-promo-files
-- Portal origin: https://portal.midamapromo.co.za
+Changes in this package
+1. Added server.mjs, a Node.js 20 HTTP server for Render.
+2. Added a Cloudflare D1 REST adapter; it targets the configured existing D1 database.
+3. Added a private Cloudflare R2 S3-compatible adapter with SigV4 upload and short-lived signed download URLs; no R2 bucket recreation is required.
+4. Added render.yaml, .env.example, and Render/D1/R2/Resend instructions in README.md.
+5. Added additive migration 0002_profile_artists_and_metadata.sql. It adds profile, rights, pre-save, composer, artist-library, draft and admin-access audit structures.
+6. Added first name, surname and primary artist collection for new client registration before OTP verification.
+7. Added a per-client artist library with Spotify/Apple profile URLs and new-profile request flags.
+8. Added release profile fields, saved-artist selection, featured-artist fields, composer validation, required rights confirmation and release-date validation.
+9. Added MP3 signature checks and artwork dimension checks on the server.
+10. Added takedown instructions for Approved/Delivered releases, admin pre-save link editing, audit records for admin client views, and admin download links.
 
-Deployment notes:
-- Configure RESEND_API_KEY as a Worker secret; never put it in wrangler.toml or commit it to GitHub.
-- Confirm the Resend sender domain/address is verified.
-- This patch has passed Node.js syntax validation for src/worker.js. It has not been deployed or tested against the live Cloudflare account.
+Preservation
+- No live D1 database was accessed or modified during this work.
+- No R2 bucket or object was accessed, deleted, or overwritten during this work.
+- Do not run db:create, drop/reset operations, or reapply 0001_init.sql to the production database.
+- Back up the existing D1 database, verify its schema/migration history, and apply only the additive 0002 migration after review.
+
+Checks performed
+- JavaScript syntax checks passed (`npm run check`).
+- Both SQL migrations executed successfully against an isolated in-memory SQLite database.
+- Render server health endpoint returned HTTP 200 in a local smoke test.
+- No live D1, R2, Resend, Render deployment, browser workflow, or cross-account security test was possible without credentials and deployed infrastructure.
+
+Known incomplete requirements
+- Full-screen three-step wizard, Back/Next/Exit flow, autosave and draft restoration UI are not complete.
+- Full primary/featured artist multi-select on every release and track, complete admin impersonation/return workflow, and complete file/metadata admin review remain incomplete.
+- Dark/light theme switching, comprehensive responsive/accessibility testing, and the full requested acceptance-test matrix remain outstanding.
+- This package is an implementation-in-progress and must not be treated as production-certified.

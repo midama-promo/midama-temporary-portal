@@ -1,14 +1,13 @@
 {
   "name": "midama-temporary-portal",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Temporary client and admin portal for Mid-Ama Promo music distribution",
+  "type": "module",
+  "description": "Mid-Ama Promo temporary music distribution portal for Render, Cloudflare D1/R2 and Resend",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "db:create": "wrangler d1 create midama-portal",
-    "db:migrate:local": "wrangler d1 migrations apply midama-portal --local",
-    "db:migrate:remote": "wrangler d1 migrations apply midama-portal --remote"
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "check": "node --check server.mjs && node --check src/worker.js && node --check public/app.js"
   },
-  "devDependencies": { "wrangler": "^4.45.0" }
+  "engines": { "node": ">=20" }
 }
