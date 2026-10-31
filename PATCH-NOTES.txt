@@ -34,3 +34,5 @@ Known incomplete requirements
 - Full primary/featured artist multi-select on every release and track, complete admin impersonation/return workflow, and complete file/metadata admin review remain incomplete.
 - Dark/light theme switching, comprehensive responsive/accessibility testing, and the full requested acceptance-test matrix remain outstanding.
 - This package is an implementation-in-progress and must not be treated as production-certified.
+
+Authentication UI correction: added explicit Sign in and Create account modes. Existing accounts use email OTP sign-in; new accounts collect first name, surname and primary artist name. No password login is implemented because this project uses email OTP authentication.
